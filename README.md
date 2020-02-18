@@ -8,7 +8,9 @@ This is a simple Python GUI which takes a number of user inputs to specify regio
 * Region Height (px)
 * Export Resolutions (comma-separated)
 
-From these inputs, the program executes shell commands to export these regions in all specified resolutions, and places them in a new subdirectory adjacent to the .svg file itself.
+From these inputs, the program executes shell commands to export these regions in all specified resolutions, and places them in a new subdirectory adjacent to the .svg file itself. A string readout indicates the .png currently being created.
+
+Additional buttons on the upper right may be used to save and load values using .csv files.
 
 # Requirements
 * Python 3.6+
