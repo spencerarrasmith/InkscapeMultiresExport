@@ -1,11 +1,13 @@
 import subprocess
 import os
+import threading
+import queue
+import time
+import datetime
 
 import tkinter as tk
 from tkinter import ttk, Tk
 from tkinter import filedialog
-
-
 
 
 class MultiresExportWindow(tk.Frame):
@@ -19,6 +21,26 @@ class MultiresExportWindow(tk.Frame):
 
         self.grid()
         self.createWidgets()
+
+        self.commandQueue = queue.Queue()
+        self.alive = threading.Event()
+        self.startCommandThread()
+
+
+    def startCommandThread(self):
+        self.cmd_thread = threading.Thread(target=self.thread_commands)
+        self.cmd_thread.setDaemon(1)
+        self.alive.set()
+        self.cmd_thread.start()
+
+    def thread_commands(self):
+        while self.alive.isSet():
+            time.sleep(0.1)
+            command = self.commandQueue.get()
+            if command:
+                self.exportstatusvar.set("Exporting " + command.split(" ")[-1])
+                subprocess.call(command, shell=True)
+                self.exportstatusvar.set("Done")
 
     def createWidgets(self):
         self.filebutton = tk.Button(self, text="Select File", command=self.openFileDialog)
