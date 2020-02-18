@@ -56,6 +56,16 @@ class MultiresExportWindow(tk.Frame):
         self.exportbutton = tk.Button(self, text="Export", command=self.exportFile)
         self.exportbutton.grid(row=0, column=3, sticky=tk.W, padx=10, pady=10)
 
+        self.exportstatusvar = tk.StringVar()
+        self.exportstatuslabel = tk.Label(self, textvariable=self.exportstatusvar, width=32, justify='left')
+        self.exportstatuslabel.grid(row=0, column=4, sticky=tk.W, padx=10, pady=10)
+
+        self.savebutton = tk.Button(self, text="Save Values", command=self.saveValues)
+        self.savebutton.grid(row=0, column=5, sticky=tk.W, padx=10, pady=10)
+
+        self.loadbutton = tk.Button(self, text="Load Values", command=self.loadValues)
+        self.loadbutton.grid(row=0, column=6, sticky=tk.W, padx=10, pady=10)
+
         self.rows = []
 
         self.addRow()
@@ -79,22 +89,44 @@ class MultiresExportWindow(tk.Frame):
 
     def exportFile(self):
         for row in self.rows:
-            for res in row.lse_out.var.get().split(','):
-                outputfile = self.inkscapefile.split(".")[0] + "_export\\" + row.lse_name.var.get() + "_" + res + ".png"
+            if row.isFilled():
+                for res in row.lse_out.var.get().split(','):
+                    outputfile = self.inkscapefile.split(".")[0] + "_export\\" + row.lse_name.var.get() + "_" + res + ".png"
 
-                command = "inkscape " + self.inkscapefile + " -z -a "
-                command += row.lse_x.var.get() + ":"
-                command += row.lse_y.var.get() + ":"
-                command += str(float(row.lse_x.var.get()) + float(row.lse_w.var.get())) + ":"
-                command += str(float(row.lse_y.var.get()) + float(row.lse_h.var.get()))
-                command += " -h " + res.strip()
-                command += " -e " + outputfile
+                    command = "inkscape " + self.inkscapefile + " -z -a "
+                    command += row.lse_x.var.get() + ":"
+                    command += row.lse_y.var.get() + ":"
+                    command += str(float(row.lse_x.var.get()) + float(row.lse_w.var.get())) + ":"
+                    command += str(float(row.lse_y.var.get()) + float(row.lse_h.var.get()))
+                    command += " -h " + res.strip()
+                    command += " -e " + outputfile
 
-                print("")
-                print(command)
-                subprocess.call(command, shell=True)
+                    print("")
+                    print(command)
+                    self.commandQueue.put(command)
 
-            row.configure(bg='green')
+                #row.configure(bg='green')
+
+    def saveValues(self):
+        out = ""
+        for row in self.rows:
+            out += row.getCSV()
+
+        filename = "exportpreset_" + datetime.datetime.now().strftime("%Y%m%d%H%M%S") + ".csv"
+        f = open(filename, 'w+')
+        f.write(out)
+        f.close()
+
+    def loadValues(self):
+        loadfile = filedialog.askopenfilename(initialdir="/", title="Select File",
+                                                       filetypes=(("Comma-Separated Values", "*.csv"), ("All Files", "*.*")))
+        f = open(loadfile, 'r')
+        csv = f.read()
+        f.close()
+
+        csvrows = csv.split('\n')
+        for i, row in enumerate(self.rows):
+            row.fillData(csvrows[i])
 
 
 class BaseFrame(tk.Frame):
@@ -129,6 +161,39 @@ class ExportObjectRow(BaseFrame):
         self.addWidgetHorizontal(self.lse_h)
         self.lse_out = LabeledStringEntry(self, text="Resolutions: ", width=16)
         self.addWidgetHorizontal(self.lse_out)
+
+    def isFilled(self):
+        if len(self.lse_name.var.get()) \
+        and len(self.lse_x.var.get()) \
+        and len(self.lse_y.var.get()) \
+        and len(self.lse_w.var.get()) \
+        and len(self.lse_h.var.get()) \
+        and len(self.lse_out.var.get()):
+            return True
+        else:
+            return False
+
+    def getCSV(self):
+        out =  self.lse_name.var.get() + ","
+        out += self.lse_x.var.get() + ","
+        out += self.lse_y.var.get() + ","
+        out += self.lse_w.var.get() + ","
+        out += self.lse_h.var.get() + ","
+        out += self.lse_out.var.get() + "\n"
+
+        return out
+
+    def fillData(self, data=""):
+        data = data.split(",")
+        i = 0
+        while len(data):
+            val = data.pop(0)
+            try:
+                self.widgets[i].var.set(val)
+                i += 1
+            except:
+                self.widgets[-1].var.set(self.widgets[-1].var.get() + ',' + val)
+
 
 
 class LabeledStringEntry(BaseFrame):
