@@ -91,7 +91,7 @@ class MultiresExportWindow(tk.Frame):
         for row in self.rows:
             if row.isFilled():
                 for res in row.lse_out.var.get().split(','):
-                    outputfile = self.inkscapefile.split(".")[0] + "_export\\" + row.lse_name.var.get() + "_" + res + ".png"
+                    outputfile = self.inkscapefile.split(".")[0] + "_export\\" + row.lse_name.var.get() + "_" + res.strip() + ".png"
 
                     command = "inkscape " + self.inkscapefile + " -z -a "
                     command += row.lse_x.var.get() + ":"
